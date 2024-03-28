@@ -1,0 +1,163 @@
+---
+title: "MA677 Midterm Project"
+usedpackages: 
+  - \usepackage{amsmath}
+  - \usepackage{amssymb}
+  - \usepackage{rotating}
+author: "Mingrui Du"
+date: "2024-03-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(
+  ggplot2,
+  dplyr,
+  tidyverse,
+  gridExtra,
+  reshape2
+)
+```
+
+## Order Statistics
+
+```{=latex}
+$F_{X_{(1)}}(x) = P(X_{(1)} \leq x)$ = P(at lease one of $X_1, X_2 ... X_n$ is $\leq$ x) \\
+\begin{align*}
+F_{X_{(1)}}(x) &= P(X_{(1)} \leq x) \\
+&= P(\text{at least one of } X_1, X_2, \ldots, X_n \text{ is } \leq x) \\
+&= 1 - P(X_{(1)} > x) \\
+&= 1 - P(X_1 > x, X_2 > x, \ldots, X_n > x) \\
+&= P(X_1 > x)P(X_2 > x) \cdots P(X_n > x) \quad &&\text{(by independence)} \\
+&= 1 - [P(X_1 > x)]^n \quad &&(X_i \text{ are identically distributed)} \\
+&= 1 - [1 - F(x)]^n \\
+f_{X_{(1)}}(x) &= \frac{d}{dx} F_{X_{(1)}}(x) \\
+&= \frac{d}{dx} \left\{ 1 - [1 - F(x)]^n \right\} \\
+&= n[1 - F(x)]^{n-1} f(x) \\
+F_{X_{(n)}}(x) &= P(X_{(n)} \leq x) \\
+&= P(X_1 \leq x, X_2 \leq x, \ldots, X_n \leq x) \\
+&= P(X_1 \leq x)P(X_2 \leq x)\cdots P(X_n \leq x) \\
+&= [F(x)]^n \\
+f_{X_{(n)}}(x) &= \frac{d}{dx} F_{X_{(n)}}(x) \\
+&= \frac{d}{dx} \left\{[F(x)]^n \right\} \\
+&= n[F(x)]^{n-1} f(x) \\
+\end{align*}
+Similarly, for order statistics in between: \\
+\begin{align*}
+F_{X_{(k)}}(x) &= P(X_{(k)} \leq x ) \\
+&= P(X_{(1)}, X_{(2)}, \ldots X_{(k-1)} \leq x, X_{(k)} = x, X_{(k+1)}, \ldots X_{(n)} > x) \\
+&= P(X_1 \leq x)P(X_2 \leq x)\cdots P(X_{(k-1)} \leq x) P(X_{k+1} > x) \cdots P(X_n > x) \\
+&= \sum_{j=k}^{n} \binom{n}{j} [F(x)]^j [1 - F(x)]^{n-j} \\
+f_{X_{(k)}}(X) &= \frac{d}{dx} F_{X_{(k)}}(X) = \frac{n!}{(k-1)!(n-k)!} [F(x)]^{k-1} [1 - F(x)]^{n-k} f(x) 
+\end{align*}
+```
+
+[Uniform Distribution, X ~ U(0, 1)]
+
+$f_{X_{(1)}}(x) = n(1-\frac{x-a}{b-a})^{n-1}\frac{1}{b-a} = nx^{(1-1)}(1-x)^{n-1} = n(1-x)^{n-1}I_{(0,\infty)}(x)$ 
+
+$X_{(1)}$ ~ Beta(1, n)
+
+$f_{X_{(k)}}(x) = \frac{n!}{(k-1)!(n-k)!} (\frac{x-a}{b-a})^{k-1} (1 - \frac{x-a}{b-a})^{n-k} \frac{1}{b-a} = I_x(k, n-k+1)$ 
+
+$X_{(k)}$ ~ Beta(k, n-k+1)
+
+$f_{X_{(n)}}(x) = n(\frac{x-a}{b-a})^{n-1} \frac{1}{b-a} = nx^{n-1}I_{(0,1)}(x)$
+
+$X_{(n)}$ ~ Beta(n, 1)
+
+```{r}
+par(mfrow = c(2, 3))
+x = seq(0, 1, length=100)
+plot(x, dbeta(x, 1, 5), ylab='density', type ='l', col='purple', main='X_1')
+plot(x, dbeta(x, 2, 4), ylab='density', type ='l', col='purple', main='X_2')
+plot(x, dbeta(x, 3, 3), ylab='density', type ='l', col='purple', main='X_3')
+plot(x, dbeta(x, 4, 2), ylab='density', type ='l', col='purple', main='X_4')
+plot(x, dbeta(x, 5, 1), ylab='density', type ='l', col='purple', main='X_n')
+```
+
+[Exponential Distribution, X ~ Exp(1)]
+
+$f_{X_{(1)}}(x) = n(e^{-\lambda x})^{n-1}\lambda e^{-\lambda x} = \lambda  n(e^{-\lambda x})^n$
+
+$f_{X_{(k)}}(x) = \frac{n!}{(k-1)!(n-k)!} (1- e^{-\lambda x})^{k-1} (e^{-\lambda x})^{n-k} \lambda e^{-\lambda x}$ 
+
+$f_{X_{(n)}}(x) = n (1- e^{-\lambda x})^{n-1} \lambda e^{-\lambda x}$
+
+```{r}
+# plot by simulation
+par(mfrow = c(2, 3))
+n <- 5
+lambda <- 1
+pdf <- function(x, k) {
+  (factorial(n) / (factorial(k-1) * factorial(n-k))) * (lambda * exp(-lambda * x)) * (1 - exp(-lambda * x))^(k-1) * exp(-lambda * x)^(n-k)
+}
+x <- seq(0, 5, length = 1000) 
+y <- sapply(x, function(x) pdf(x, 1))
+plot(x, y, ylab='density', type ='l', col='purple', main='X_1')
+y <- sapply(x, function(x) pdf(x, 2))
+plot(x, y, ylab='density', type ='l', col='purple', main='X_2')
+y <- sapply(x, function(x) pdf(x, 3))
+plot(x, y, ylab='density', type ='l', col='purple', main='X_3')
+y <- sapply(x, function(x) pdf(x, 4))
+plot(x, y, ylab='density', type ='l', col='purple', main='X_4')
+y <- sapply(x, function(x) pdf(x, n))
+plot(x, y, ylab='density', type ='l', col='purple', main='X_n')
+```
+
+[Normal Distribution, X ~ N(0, 1)]
+
+$f_{X_{(1)}}(x) = n(1-\Phi(\frac{x-\mu}{\sigma}))^{n-1}\frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2} $ 
+
+$f_{X_{(k)}}(x) = \frac{n!}{(k-1)!(n-k)!} (\Phi(\frac{x-\mu}{\sigma}))^{k-1} (1 - \Phi(\frac{x-\mu}{\sigma}))^{n-k} \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2}$ 
+
+$f_{X_{(n)}}(x) = n(\Phi(\frac{x-\mu}{\sigma}))^{n-1} \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2}$
+
+```{r}
+set.seed(123) 
+
+n <- 50 
+reps <- 1000 
+
+sim_data <- replicate(reps, {
+  sample <- sort(rnorm(n))
+  c(X_1 = sample[1], X_2 = sample[2], X_3 = sample[3], X_4 = sample[4], X_n = sample[n])
+})
+
+sim_df <- as.data.frame(t(sim_data))
+sim_df$rep <- 1:nrow(sim_df)
+
+ggplot(melt(sim_df, id.vars = "rep"), aes(x = value)) +
+  geom_density(aes(fill = variable), alpha = 0.5) +
+  labs(x = "Value", y = "Density", title = "Density of Order Statistics") +
+  scale_fill_brewer(palette = "Set1", name = "Statistic") +
+  theme_minimal()
+
+```
+
+## Exponential 
+
+```{=latex}
+[CDF]\\
+For X $\sim$ Exp($\lambda$)
+\begin{align*}
+f(x) &= \lambda e^{-\lambda x}, x \geq 0\\
+F(x) &= \int_{0}^{\infty} \lambda e^{-\lambda x} \,dx = -\int_{0}^{\infty} e^{-\lambda x} \,d{(-\lambda x)} \\ 
+&= -e^{-\lambda x} \bigg|_{0}^{\infty} = 1 -e^{-\lambda x} \text{, x $\geq$ 0} 
+\end{align*}
+[MGF]\\
+\begin{align*}
+M_X(t) = E[e^{tX}] = \int_{0}^{\infty} e^{tx} d{(1 - e^{-\lambda x})} = \int_{0}^{\infty} \lambda e^{(t-\lambda)x} dx = \frac{\lambda}{\lambda - t} \quad \text{for} \quad t < \lambda
+\end{align*}
+[Expectations, Variances]
+\begin{align*}
+E[X] &= M_X(1) = \frac{d}{dx} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \frac{\lambda }{(\lambda - t)^2} \bigg|_{t=0}= \frac{1}{\lambda} \\
+E[X^2] &= M_X(2) = \frac{d^2}{dx^2} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \frac{2\lambda }{(\lambda - t)^3} \bigg|_{t=0} = \frac{2}{\lambda^2}\\
+Var[X] &= E[X^2] - E[X]^2 = \frac{1}{\lambda ^2}\\
+E[X^3] &= M_X(3) = \frac{d^3}{dx^3} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \frac{2*3\lambda }{(\lambda - t)^3} \bigg|_{t=0} = \frac{6}{\lambda^3}\\
+E[X^4] &= M_X(4) = \frac{d^4}{dx^4} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \frac{6*4\lambda }{(\lambda - t)^4} \bigg|_{t=0} = \frac{24}{\lambda^4}\\
+E[X^5] &= M_X(5) = \frac{d^5}{dx^5} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \frac{24*5\lambda }{(\lambda - t)^5} \bigg|_{t=0} = \frac{120}{\lambda^5}\\
+\end{align*}
+```
+
