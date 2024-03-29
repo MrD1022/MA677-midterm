@@ -108,7 +108,7 @@ plot(x, y, ylab='density', type ='l', col='purple', main='X_n')
 
 [Normal Distribution, X ~ N(0, 1)]
 
-$f_{X_{(1)}}(x) = n(1-\Phi(\frac{x-\mu}{\sigma}))^{n-1}\frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2} $ 
+$f_{X_{(1)}}(x) = n(1-\Phi(\frac{x-\mu}{\sigma}))^{n-1}\frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2}$ 
 
 $f_{X_{(k)}}(x) = \frac{n!}{(k-1)!(n-k)!} (\Phi(\frac{x-\mu}{\sigma}))^{k-1} (1 - \Phi(\frac{x-\mu}{\sigma}))^{n-k} \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2}$ 
 
@@ -116,10 +116,8 @@ $f_{X_{(n)}}(x) = n(\Phi(\frac{x-\mu}{\sigma}))^{n-1} \frac{1}{\sqrt{2\pi}\sigma
 
 ```{r}
 set.seed(123) 
-
 n <- 50 
 reps <- 1000 
-
 sim_data <- replicate(reps, {
   sample <- sort(rnorm(n))
   c(X_1 = sample[1], X_2 = sample[2], X_3 = sample[3], X_4 = sample[4], X_n = sample[n])
@@ -135,6 +133,8 @@ ggplot(melt(sim_df, id.vars = "rep"), aes(x = value)) +
   theme_minimal()
 
 ```
+
+
 
 ## Exponential 
 
@@ -161,3 +161,50 @@ E[X^5] &= M_X(5) = \frac{d^5}{dx^5} \frac{\lambda}{\lambda - t} \bigg|_{t=0} = \
 \end{align*}
 ```
 
+First Moment: Mean
+
+Second Moment: Variance, measures the spread of distribution
+
+Third Moment: Skewness, provides the degree of asymmetry observed in distribution. Here the positive value indicates this curve is heavy in the left, in other words, has a long tail on the right.
+
+Fourth Moment: Kurtosis focuses on peak or flatness of distribution.
+
+Fifth Moment: Provides insight on shape and asymmetry and tail behavior (from ChatGPT).
+
+Exponential distribution is a special case of Gamma Distribution when n = 1.
+
+For $S = X_1 + X_2 + \ldots + X_n$, $X_i\sim Exp(\lambda)$
+
+$M_S(t) = [M_X(t)]^n = (\frac{\lambda}{\lambda - t})^n$
+
+## Irrigation
+
+```{r}
+rotation_times <- c(
+  21.80086, 23.74087, 24.6675, 22.1376, 21.4186,
+  23.80423, 23.11184, 24.23174, 24.826, 21.44181,
+  22.09314, 22.96205, 22.27362, 23.23669, 22.05037,
+  21.8075, 22.5501, 24.55148, 23.21969, 24.36872,
+  24.56083, 23.8828, 21.84536, 21.90287, 21.55993,
+  22.91966, 22.74965, 24.86386, 21.56766, 24.81992,
+  22.77892, 21.23745, 22.1006, 21.12459, 21.05793
+)
+data <- data.frame(rotime = rotation_times)
+data$speed <- 1320 * 2 * pi/data$rotime
+speed_mean <- mean(data$speed)
+speed_sd <- sd(data$speed)
+speed_se <- speed_sd / sqrt(nrow(data))
+t <- qt(0.95, df = nrow(data) - 1)
+margin_error <- t * speed_se
+speed_lb <- speed_mean - margin_error
+speed_ub <- speed_mean + margin_error
+cat("mean: ", speed_mean, "\n")
+cat("standard error: ", speed_se, "\n")
+cat("90% Confidence Interval: (", speed_lb, ",", speed_ub, ")")
+```
+
+The average rotation speed has a mean of 364.2. Standard error 3.26 is relatively small compared to mean. Since sample size is small, we calculate t-value to give 90% confidence interval of the speed, (358.6738 , 369.7162), which means 90% of the speed will be in this range. 
+
+## Acknowledgement
+
+Wuge Li explained concept and strategy of *order statistics*; Jinhu Sun helped on *Irrigation*; and thankfulness to my friends as we together discussed, prepared for both exam and this project.
